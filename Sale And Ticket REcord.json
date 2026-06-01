@@ -1,0 +1,367 @@
+{
+  "name": "Sale And Ticket REcord",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "9065edcd-7468-4118-8b9a-306806d898a8",
+      "name": "Weekly Monday 8AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -592,
+        768
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "f75d7e96-10bd-4550-a7b8-7839d6edb384",
+      "name": "Merge Report Data",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -64,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const ticketData = $input.all().filter(i => i.json.department);\nconst salesData = $input.all().filter(i => i.json.product_name);\n\nconst totalTickets = ticketData.reduce((sum, i) => sum + Number(i.json.total_tickets), 0);\nconst totalRevenue = salesData.reduce((sum, i) => sum + Number(i.json.total_revenue), 0);\n\nconst avgResolution = ticketData.length\n  ? (ticketData.reduce((sum, i) => sum + Number(i.json.avg_resolution || 0), 0) / ticketData.length).toFixed(2)\n  : '0';\n\nreturn [{\n  json: {\n    weekOf: new Date().toISOString().split('T')[0],\n    summary: {\n      totalTickets,\n      totalRevenue: totalRevenue.toFixed(2),\n      avgResolutionHours: avgResolution,\n      topProduct: salesData[0]?.json?.product_name || 'N/A'\n    },\n    ticketsByDepartment: ticketData,\n    topProducts: salesData\n  }\n}];"
+      },
+      "id": "7b7b2934-7d39-4088-8394-cbfc2abe5c34",
+      "name": "Build Weekly Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        176,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1CNHkk31gOdniGvtLElpL4mhKkTQAQSoKwiZb7PqJt_U",
+          "mode": "list",
+          "cachedResultName": "Weekly Summary",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1CNHkk31gOdniGvtLElpL4mhKkTQAQSoKwiZb7PqJt_U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1CNHkk31gOdniGvtLElpL4mhKkTQAQSoKwiZb7PqJt_U/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "weekOf": "={{ $json.weekOf }}",
+            "id": "={{ $json.ticketsByDepartment[0].json.id }}"
+          },
+          "matchingColumns": [
+            "weekOf"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "weekOf",
+              "displayName": "weekOf",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "totalTickets",
+              "displayName": "totalTickets",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "totalRevenue",
+              "displayName": "totalRevenue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "avgResolutionHours",
+              "displayName": "avgResolutionHours",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "topProduct",
+              "displayName": "topProduct",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ticketsByDepartment",
+              "displayName": "ticketsByDepartment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "topProducts",
+              "displayName": "topProducts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "3f775411-e13c-4ad0-87f5-79f124edef17",
+      "name": "Save Weekly Report",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        448,
+        608
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "da56YHMcOTVr7EaK",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "nomiash1122@gmail.com",
+        "subject": "Weekly Business Report",
+        "message": "<h1>Weekly Business Report</h1><p>Total Tickets: {{$json.summary.totalTickets}}</p><p>Total Revenue: ${{$json.summary.totalRevenue}}</p><p>Avg Resolution: {{$json.summary.avgResolutionHours}} hrs</p><p>Top Product: {{$json.summary.topProduct}}</p>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "802cabdd-d236-48de-892f-15d51ffdc6aa",
+      "name": "Send Weekly Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        448,
+        752
+      ],
+      "webhookId": "bc8b3add-d8d2-43be-912a-896ca5457bb8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GY0IP0iFTcK17LvZ",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0AK47D71J5",
+          "mode": "list",
+          "cachedResultName": "social"
+        },
+        "text": "📊 Weekly Report\\n\\n• Tickets: {{$json.summary.totalTickets}}\\n• Revenue: ${{$json.summary.totalRevenue}}\\n• Avg Resolution: {{$json.summary.avgResolutionHours}} hrs\\n• Top Product: {{$json.summary.topProduct}}",
+        "otherOptions": {}
+      },
+      "id": "dfabb435-fe33-4c69-a898-78d486723edf",
+      "name": "Slack Summary",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        896
+      ],
+      "webhookId": "afcf6e7c-d133-48fd-a8e4-29d2953776e6",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "4v0pMTBgumPS4wv3",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "sales",
+        "returnAll": true,
+        "filters": {
+          "conditions": []
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        880
+      ],
+      "id": "d6bfc0b6-eaa8-4d80-83cb-ccfd6dafe0ac",
+      "name": "Get all Sales Records",
+      "credentials": {
+        "supabaseApi": {
+          "id": "ZBp1cGbNcWeus7sU",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "tickets",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        640
+      ],
+      "id": "0b3813ba-24f2-4c8a-99ca-c72744c90956",
+      "name": "Get all Tickets Records",
+      "credentials": {
+        "supabaseApi": {
+          "id": "ZBp1cGbNcWeus7sU",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Weekly Monday 8AM": {
+      "main": [
+        [
+          {
+            "node": "Get all Tickets Records",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get all Sales Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Report Data": {
+      "main": [
+        [
+          {
+            "node": "Build Weekly Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Weekly Report": {
+      "main": [
+        [
+          {
+            "node": "Save Weekly Report",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Weekly Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Slack Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get all Sales Records": {
+      "main": [
+        [
+          {
+            "node": "Merge Report Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get all Tickets Records": {
+      "main": [
+        [
+          {
+            "node": "Merge Report Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "258920d8-4496-46cb-8771-2c5eae5a15e5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "30753312db25ec1e9d2982ea935486b5b05117304713334e109ebe3afde34893"
+  },
+  "id": "LiTTdHIuQpHXey4S",
+  "tags": []
+}
